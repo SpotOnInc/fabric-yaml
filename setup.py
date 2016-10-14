@@ -1,5 +1,3 @@
 from setuptools import setup
 
-from fabric.version import VERSION
-
-setup(name='fabric', version=VERSION, description='tav/pylibs fork of Fabric')
+setup(name='fabric', version='1.0.0+alpha0', description='tav/pylibs fork of Fabric')
