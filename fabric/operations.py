@@ -43,7 +43,7 @@ def _pty_size():
     local (stdout-based) terminal window size on non-Windows platforms.
     """
     rows, cols = 24, 80
-    if not win32 and sys.stdin.isatty():
+    if not win32 and sys.stdout.isatty():
         # We want two short unsigned integers (rows, cols)
         fmt = 'HH'
         # Create an empty (zeroed) buffer for ioctl to map onto. Yay for C!
@@ -99,8 +99,13 @@ def _shell_escape(string):
         >>> _shell_escape('"')
         '\\\\"'
     """
-    for char in ('"', '$', '`'):
-        string = string.replace(char, '\%s' % char)
+	# Upstream bugfix - see https://github.com/fabric/fabric/pull/488.
+	#
+    # Backslash comes first in tuple because backslashes must be escaped first.
+    # Otherwise, we'd escape the backslashes that were introduced by the other
+    # escapes.
+    for char in ('\\', '"', '$', '`'):
+        string = string.replace(char, '\\%s' % char)
     return string
 
 
@@ -126,9 +131,9 @@ def require(*keys, **kwargs):
     The optional keyword argument ``used_for`` may be a string, which will be
     printed in the error output to inform users why this requirement is in
     place. ``used_for`` is printed as part of a string similar to::
-    
+
         "Th(is|ese) variable(s) (are|is) used for %s"
-        
+
     so format it appropriately.
 
     The optional keyword argument ``provided_by`` may be a list of functions or
@@ -198,7 +203,7 @@ def prompt(text, key=None, default='', validate=None):
     a trailing space after the ``[foo]``.)
 
     The optional keyword argument ``validate`` may be a callable or a string:
-    
+
     * If a callable, it is called with the user's input, and should return the
       value to be stored on success. On failure, it should raise an exception
       with an exception message, which will be printed to the user.
@@ -212,20 +217,20 @@ def prompt(text, key=None, default='', validate=None):
     hits ``Ctrl-C``).
 
     Examples::
-    
+
         # Simplest form:
         environment = prompt('Please specify target environment: ')
-        
+
         # With default, and storing as env.dish:
         prompt('Specify favorite dish: ', 'dish', default='spam & eggs')
-        
+
         # With validation, i.e. requiring integer input:
         prompt('Please specify process nice level: ', key='nice', validate=int)
-        
+
         # With validation against a regular expression:
         release = prompt('Please supply a release name',
                 validate=r'^\w+-\d+(\.\d+)?$')
-    
+
     """
     # Store previous env value for later display, if necessary
     if key:
@@ -299,7 +304,7 @@ def prompt(text, key=None, default='', validate=None):
 def put(local_path, remote_path, mode=None):
     """
     Upload one or more files to a remote host.
-    
+
     ``local_path`` may be a relative or absolute local file path, and may
     contain shell-style wildcards, as understood by the Python ``glob`` module.
     Tilde expansion (as implemented by ``os.path.expanduser``) is also
@@ -314,13 +319,13 @@ def put(local_path, remote_path, mode=None):
     also set the mode explicitly by specifying the ``mode`` keyword argument,
     which sets the numeric mode of the remote file. See the ``os.chmod``
     documentation or ``man chmod`` for the format of this argument.
-    
+
     Examples::
-    
+
         put('bin/project.zip', '/tmp/project.zip')
         put('*.py', 'cgi-bin/')
         put('index.html', 'index.html', mode=0755)
-    
+
     """
     ftp = connections[env.host_string].open_sftp()
     with closing(ftp) as ftp:
@@ -338,7 +343,7 @@ def put(local_path, remote_path, mode=None):
         if not globs:
             raise ValueError, "'%s' is not a valid local path or glob." \
                 % local_path
-    
+
         # Iterate over all given local files
         for lpath in globs:
             # If remote path is directory, tack on the local filename
@@ -373,7 +378,7 @@ def put(local_path, remote_path, mode=None):
 def get(remote_path, local_path):
     """
     Download a file from a remote host.
-    
+
     ``remote_path`` should point to a specific file, while ``local_path`` may
     be a directory (in which case the remote filename is preserved) or
     something else (in which case the downloaded file is renamed). Tilde
@@ -394,7 +399,7 @@ def get(remote_path, local_path):
 
     For example, the following snippet will produce two files on your local
     system, called ``server.log.host1`` and ``server.log.host2`` respectively::
-   
+
         @hosts('host1', 'host2')
         def my_download_task():
             get('/var/log/server.log', 'server.log')
@@ -745,11 +750,11 @@ def run(
     separated). For more info, please read :ref:`combine_streams`.
 
     Examples::
-    
+
         run("ls /var/www/")
         run("ls /home/myuser", shell=False)
         output = run('ls /var/www/site1')
-    
+
     .. versionadded:: 1.0
         The ``succeeded`` and ``stderr`` return value attributes, the
         ``combine_stderr`` kwarg, and interactive behavior.
@@ -809,12 +814,12 @@ def sudo(
     ``user`` may likewise be a string or an int.
 
     Examples::
-    
+
         sudo("~/install_script.py")
         sudo("mkdir /var/www/new_docroot", user="www-data")
         sudo("ls /home/jdoe", user=1001)
         result = sudo("ls /tmp/")
-    
+
     .. versionchanged:: 1.0
         See the changed and added notes for `~fabric.operations.run`.
     """
@@ -836,7 +841,7 @@ def local(command, capture=True, dir=None, format=Blank):
     stdout as a string, and will not print anything to the user. As with `run`
     and `sudo`, this return value exhibits the ``return_code``, ``stderr``,
     ``failed`` and ``succeeded`` attributes. See `run` for details.
-    
+
     .. note::
         `local`'s capturing behavior differs from the default behavior of `run`
         and `sudo` due to the different mechanisms involved: it is difficult to

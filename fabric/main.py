@@ -13,7 +13,7 @@ import os
 import sys
 
 from fnmatch import fnmatch
-from optcomplete import ListCompleter, autocomplete
+# from optcomplete import ListCompleter, autocomplete
 from optparse import OptionParser
 from os.path import dirname, expanduser, join, realpath
 
@@ -292,6 +292,8 @@ def parse_options():
 
     for option in env_options:
         parser.add_option(option)
+
+    parser.defaults['rcfile'] = ''
 
     #
     # Finalize
@@ -630,12 +632,12 @@ def main():
             docstring, callables = load_fabfile(fabfile)
             commands.update(callables)
 
-        # Autocompletion support
-        autocomplete_items = [cmd.replace('_', '-') for cmd in commands]
-        if 'autocomplete' in env:
-            autocomplete_items += env.autocomplete
+        # # Autocompletion support
+        # autocomplete_items = [cmd.replace('_', '-') for cmd in commands]
+        # if 'autocomplete' in env:
+        #     autocomplete_items += env.autocomplete
 
-        autocomplete(parser, ListCompleter(autocomplete_items))
+        # autocomplete(parser, ListCompleter(autocomplete_items))
 
         # Handle hooks related options
         _disable_hooks = options.disable_hooks
@@ -713,7 +715,15 @@ def main():
                 execute_command(commands_to_run.pop(0), commands)
 
         if env.config_file:
-            config_path = realpath(expanduser(env.config_file))
+            rc_file = env.config_file
+
+            if env.rcfile:
+                try:
+                    rc_file = env.rcfile
+                except AttributeError:
+                    pass
+
+            config_path = realpath(expanduser(rc_file))
             config_path = join(dirname(fabfile), config_path)
             config_file = open(config_path, 'rb')
             config = load_yaml(config_file.read())

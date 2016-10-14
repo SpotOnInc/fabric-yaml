@@ -345,7 +345,7 @@ def char_buffered(pipe):
     """
     if 'disable_char_buffering' in env and env.disable_char_buffering:
         yield
-    elif win32 or not sys.stdin.isatty():
+    elif win32 or not pipe.isatty():
         yield
     else:
         old_settings = termios.tcgetattr(pipe)
